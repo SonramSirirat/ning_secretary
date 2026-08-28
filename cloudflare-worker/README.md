@@ -1,17 +1,30 @@
-# AquaCheck API Proxy (Cloudflare Worker)
+# AquaCheck API Proxy (Cloudflare Worker, Gemini edition)
 
-Keeps your real Anthropic API key off the client. The GitHub Pages frontend
-calls this Worker; the Worker attaches the key and forwards to Anthropic.
+Keeps your API key off the client. The GitHub Pages frontend calls this
+Worker; the Worker attaches a **Google Gemini** API key (free tier, no
+credit card required) and forwards to Google, translating the
+request/response shape so the frontend doesn't need to know or care which
+model provider is behind it.
 
 ```
-Browser (GitHub Pages) → this Worker (holds API key) → api.anthropic.com → back to browser
+Browser (GitHub Pages) → this Worker (holds Gemini key) → generativelanguage.googleapis.com → back to browser
 ```
+
+## Why Gemini
+
+Google's Gemini API has a genuine free tier: no credit card, no billing
+setup. As of testing this, `gemini-2.5-flash` (the default model this
+Worker uses) gets roughly **10 requests/minute and 250 requests/day** on
+the free tier — Google does adjust these numbers over time, so check
+[ai.google.dev](https://ai.google.dev/gemini-api/docs/rate-limits) for the
+current figures if you're unsure.
 
 ## Prerequisites
 
 - A Cloudflare account (free tier is enough)
 - Node.js installed locally
-- An Anthropic API key (console.anthropic.com → API Keys)
+- A free Gemini API key — get one at **https://aistudio.google.com/apikey**
+  (sign in with a Google account, no payment info needed)
 
 ## Deploy
 
@@ -25,49 +38,58 @@ Browser (GitHub Pages) → this Worker (holds API key) → api.anthropic.com →
    wrangler login
    ```
 
-3. From this folder, set your real API key as a secret (you'll be prompted
-   to paste it — it is **not** written to any file in this repo):
+3. **If you previously set an `ANTHROPIC_API_KEY` secret on this Worker**,
+   remove it (optional cleanup, not required for this to work):
    ```bash
-   wrangler secret put ANTHROPIC_API_KEY
+   wrangler secret delete ANTHROPIC_API_KEY
    ```
 
-4. Edit `wrangler.toml` and set `ALLOWED_ORIGIN` to your actual GitHub Pages
-   URL, e.g. `https://sonramsirirat.github.io` (no trailing slash). This
-   restricts who can call your proxy.
+4. Set your Gemini key as a secret (you'll be prompted to paste it — it is
+   **not** written to any file in this repo):
+   ```bash
+   wrangler secret put GEMINI_API_KEY
+   ```
 
-5. Deploy:
+5. Confirm `ALLOWED_ORIGIN` in `wrangler.toml` matches your actual GitHub
+   Pages URL, e.g. `https://sonramsirirat.github.io` (no trailing slash).
+
+6. Deploy:
    ```bash
    wrangler deploy
    ```
 
-6. Wrangler will print a URL like:
-   ```
-   https://aquacheck-proxy.<your-subdomain>.workers.dev
-   ```
-   Copy it.
+The URL stays the same as before if you're redeploying the same Worker
+(`aquacheck-proxy`) — no changes needed in `js/config.js` on the frontend.
 
-## Wire it up to the frontend
+If this is a fresh Worker, copy the printed URL and paste it into
+`js/config.js`'s `API_PROXY_URL`, same as before.
 
-In the AquaCheck repo, open `js/config.js` and set:
+## What changed vs. the Anthropic version
 
-```js
-export const API_PROXY_URL = 'https://aquacheck-proxy.<your-subdomain>.workers.dev';
-```
+| | Anthropic version | Gemini version |
+|---|---|---|
+| Secret name | `ANTHROPIC_API_KEY` | `GEMINI_API_KEY` |
+| Upstream API | `api.anthropic.com` | `generativelanguage.googleapis.com` |
+| Cost | Pay-as-you-go, requires credits | Free tier, no credit card |
+| Frontend changes needed | — | **None** — same request/response shape preserved |
 
-Commit and push. GitHub Pages redeploys automatically, and `js/api/claudeApi.js`
-will now call your Worker instead of `api.anthropic.com` directly.
+The Worker translates the frontend's Anthropic-shaped request
+(`{ model, max_tokens, messages: [{role, content}] }`) into Gemini's format,
+and translates Gemini's response back into the
+`{ content: [{type:'text', text}] }` shape the frontend already expects.
+`js/api/claudeApi.js` and `js/config.js` in the main app repo are untouched.
 
 ## Notes
 
-- The Worker enforces a `max_tokens` ceiling (4000) and only forwards
-  `model`, `max_tokens`, and `messages` — the frontend can't smuggle a
-  different API key or endpoint through it.
+- The Worker enforces a `maxOutputTokens` ceiling (4000) and forces JSON
+  output mode (`responseMimeType: "application/json"`) since this app
+  always prompts for a JSON-only response — this generally makes Gemini's
+  output more reliably parseable.
+- If you hit Gemini's free-tier rate limit, the Worker forwards Gemini's
+  own `429` response straight through — the frontend's existing "check
+  could not be completed" error message will show, which is expected
+  under heavy testing. Wait a minute and retry, or check your quota at
+  [aistudio.google.com](https://aistudio.google.com).
 - `ALLOWED_ORIGIN` controls CORS. Setting it to `"*"` lets any website call
-  your proxy (and burn your API credits) — keep it scoped to your actual
-  domain in production.
-- This Worker has no rate limiting or auth beyond the CORS origin check. For
-  a small personal/team tool that's usually fine; for anything public-facing,
-  consider adding Cloudflare's rate limiting rules or a lightweight
-  shared-secret header check.
-- Redeploying only requires `wrangler deploy` again after any change to
-  `src/worker.js`.
+  your proxy (and burn your free-tier quota) — keep it scoped to your
+  actual domain in production.

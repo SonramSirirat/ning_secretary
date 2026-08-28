@@ -8,4 +8,7 @@ compatibility_date = "2026-08-01"
 ALLOWED_ORIGIN = "https://sonramsirirat.github.io"
 
 # The real secret is NOT stored here — set it after creating the Worker:
-#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put GEMINI_API_KEY
+#
+# Get a free key (no credit card required) at:
+#   https://aistudio.google.com/apikey
