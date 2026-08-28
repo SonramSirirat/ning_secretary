@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "wrangler": "^4.127.0"
+  },
+  "allowScripts": {
+    "wrangler@4.127.0": true
+  }
+}
