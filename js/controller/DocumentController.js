@@ -35,12 +35,19 @@ export class DocumentController {
 
     if (m.step === 'input') {
       const mdedit = document.getElementById('mdedit');
-      if (mdedit) mdedit.addEventListener('input', e => { m.setMarkdown(e.target.value); });
-
       const dlBtn = document.getElementById('btn-download-md');
-      if (dlBtn) dlBtn.addEventListener('click', () => m.downloadMarkdown());
-
       const checkBtn = document.getElementById('btn-run-check');
+
+      if (mdedit) {
+        mdedit.addEventListener('input', e => {
+          m.setMarkdown(e.target.value);
+          const hasText = e.target.value.trim().length > 0;
+          if (checkBtn) checkBtn.disabled = !hasText;
+          if (dlBtn) dlBtn.disabled = !hasText;
+        });
+      }
+
+      if (dlBtn) dlBtn.addEventListener('click', () => m.downloadMarkdown());
       if (checkBtn) checkBtn.addEventListener('click', () => this._runCheck());
     }
 
