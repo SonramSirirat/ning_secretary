@@ -1,0 +1,11 @@
+name = "aquacheck-proxy"
+main = "src/worker.js"
+compatibility_date = "2026-08-01"
+
+# Set to your actual GitHub Pages origin (no trailing slash) once known.
+# Using "*" works too but allows any site to call your proxy.
+[vars]
+ALLOWED_ORIGIN = "https://sonramsirirat.github.io"
+
+# The real secret is NOT stored here — set it after creating the Worker:
+#   wrangler secret put ANTHROPIC_API_KEY

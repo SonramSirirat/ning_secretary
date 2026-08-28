@@ -1,5 +1,5 @@
 /* ---------------- Checklist settings view ---------------- */
-import { ICONS } from '../../icons.js';
+import { ICONS } from './icons.js';
 import { escapeHtml } from '../util/helpers.js';
 import { CATEGORIES } from '../model/ChecklistModel.js';
 

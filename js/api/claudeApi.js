@@ -1,7 +1,12 @@
 /* ---------------- Claude API helpers ---------------- */
+// Requests go through a Cloudflare Worker proxy (js/config.js -> API_PROXY_URL)
+// rather than calling api.anthropic.com directly. The browser never holds a
+// real API key; the Worker attaches it server-side. See /cloudflare-worker/.
+
+import { API_PROXY_URL } from '../config.js';
 
 async function callClaude(messages, { maxTokens = 1500 } = {}) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(API_PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
