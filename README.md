@@ -4,6 +4,15 @@ Assistance tool for aqua feed document checking and validation.
 
 ## What changed in this refactor
 
+- **Download .md removed.** The "Download .md" button and its supporting code
+  (`DocumentModel.downloadMarkdown`) have been removed — the editor is purely for
+  input/editing now, not export.
+- **Checklist grouped by document type.** Checklist rules now belong to a document
+  type (e.g. "Health Certificate", "Packing List", "Invoice") in addition to their
+  existing rule category. The Checklist Settings tab shows a tab per document type,
+  and you can add or remove document types from there. The Document step gets a
+  "Document type" selector that determines which document type's rules a compliance
+  check runs against.
 - **PDF → Markdown conversion removed.** The app no longer accepts PDFs, renders page
   thumbnails, or calls the image-to-markdown Claude API path. Markdown is now supplied
   directly by pasting/typing it into the editor (file upload has been removed too — the
@@ -75,7 +84,10 @@ your own server), you'll need to:
 ## Default checklist
 
 Ten rules across four categories — Completeness, Regulatory Requirements, Data
-Consistency, and Formalities — covering things like consignor/consignee details, heat
-treatment parameters, Salmonella/Enterobacteriaceae limits, ruminant-derived ingredient
-declarations, batch number consistency, and signature/stamp formalities. Edit or extend
-these from the **Checklist Settings** tab.
+Consistency, and Formalities — filed under the "Health Certificate" document type,
+covering things like consignor/consignee details, heat treatment parameters,
+Salmonella/Enterobacteriaceae limits, ruminant-derived ingredient declarations, batch
+number consistency, and signature/stamp formalities. Two more document types —
+"Packing List" and "Invoice" — start out empty. Add, edit, or remove document types
+and rules from the **Checklist Settings** tab; the Document step's "Document type"
+selector picks which set of rules a check runs against.

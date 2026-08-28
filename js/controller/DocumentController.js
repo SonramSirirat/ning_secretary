@@ -14,9 +14,13 @@ export class DocumentController {
 
   render() {
     const m = this.docModel;
+    // Default the doc-type selection once the checklist has loaded.
+    if (!m.docType && this.checklistModel.getDocTypes && this.checklistModel.getAll()) {
+      m.docType = this.checklistModel.getDocTypes()[0] || null;
+    }
     this.mountEl.innerHTML = `
       ${renderStepper(m)}
-      ${m.step === 'input' ? renderInputStep(m) : ''}
+      ${m.step === 'input' ? renderInputStep(m, this.checklistModel) : ''}
       ${m.step === 'results' ? renderResultsStep(m, this.checklistModel) : ''}
     `;
     this._wireEvents();
@@ -35,19 +39,19 @@ export class DocumentController {
 
     if (m.step === 'input') {
       const mdedit = document.getElementById('mdedit');
-      const dlBtn = document.getElementById('btn-download-md');
       const checkBtn = document.getElementById('btn-run-check');
+      const docTypeSelect = document.getElementById('doctype-select');
 
       if (mdedit) {
         mdedit.addEventListener('input', e => {
           m.setMarkdown(e.target.value);
           const hasText = e.target.value.trim().length > 0;
           if (checkBtn) checkBtn.disabled = !hasText;
-          if (dlBtn) dlBtn.disabled = !hasText;
         });
       }
 
-      if (dlBtn) dlBtn.addEventListener('click', () => m.downloadMarkdown());
+      if (docTypeSelect) docTypeSelect.addEventListener('change', e => { m.docType = e.target.value; });
+
       if (checkBtn) checkBtn.addEventListener('click', () => this._runCheck());
     }
 
@@ -70,15 +74,16 @@ export class DocumentController {
     m.checkError = null;
     this.render();
     try {
-      const activeRules = this.checklistModel.getEnabled();
+      const activeRules = this.checklistModel.getEnabled(m.docType);
       if (activeRules.length === 0) {
-        m.checkError = 'No checklist rules are enabled. Turn some on in Checklist Settings.';
+        m.checkError = `No checklist rules are enabled for "${m.docType}". Turn some on in Checklist Settings.`;
         m.checking = false;
         this.render();
         return;
       }
       const results = await runChecklistCheck(m.markdown, activeRules, this.authModel.key);
       m.results = results;
+      m.checkedDocType = m.docType;
       m.step = 'results';
       m.resultFilter = 'all';
     } catch (err) {

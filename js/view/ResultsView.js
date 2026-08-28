@@ -26,12 +26,13 @@ export function renderResultsStep(docModel, checklistModel) {
     ? docModel.results
     : docModel.results.filter(r => r.status === docModel.resultFilter);
 
-  const enabledCount = rules.filter(r => r.enabled).length;
+  const checkedDocType = docModel.checkedDocType;
+  const enabledCount = rules.filter(r => r.enabled && (!checkedDocType || r.docType === checkedDocType)).length;
 
   return `
   <div class="card">
     <h2>Inspection results</h2>
-    <p class="sub">Checked against ${enabledCount} active checklist rule${enabledCount === 1 ? '' : 's'}.</p>
+    <p class="sub">${checkedDocType ? `Checked as <strong>${escapeHtml(checkedDocType)}</strong> against ` : 'Checked against '}${enabledCount} active checklist rule${enabledCount === 1 ? '' : 's'}.</p>
     <div class="resultsummary">
       <div class="sumchip"><span class="dot" style="background:var(--success)"></span>${counts.pass} pass</div>
       <div class="sumchip"><span class="dot" style="background:var(--coral)"></span>${counts.fail} fail</div>

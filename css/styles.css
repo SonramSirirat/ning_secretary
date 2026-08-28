@@ -107,6 +107,15 @@ textarea.mdbox{
 }
 textarea.mdbox:focus{outline:none;border-color:var(--teal);}
 
+.doctypefield{margin-bottom:16px;}
+.doctypefield label{display:block;font-size:12px;font-weight:600;color:var(--navy-deep);margin-bottom:6px;}
+.doctypefield select{
+  padding:9px 12px;border:1px solid var(--line);border-radius:5px;font-size:13.5px;font-family:inherit;
+  background:#fff;color:var(--ink);min-width:220px;
+}
+.doctypefield select:focus{outline:none;border-color:var(--teal);}
+.doctypefield-hint{display:block;font-size:12px;color:var(--ink-soft);margin-top:6px;}
+
 .empty{
   text-align:center;padding:50px 20px;color:var(--ink-soft);font-size:13.5px;
 }
@@ -120,6 +129,28 @@ textarea.mdbox:focus{outline:none;border-color:var(--teal);}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* Checklist settings */
+.doctypetabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.doctypetab{
+  display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;padding:8px 13px;
+  border-radius:16px;border:1px solid var(--line);background:var(--paper-dim);color:var(--ink-soft);
+  cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+}
+.doctypetab:hover{color:var(--navy);}
+.doctypetab.active{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600;}
+.doctypetab-del{
+  display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+  opacity:.65;transition:opacity .15s,background .15s;
+}
+.doctypetab-del:hover{opacity:1;background:rgba(255,255,255,0.2);}
+.doctypetab.active .doctypetab-del svg{color:#fff;}
+.doctypetab:not(.active) .doctypetab-del svg{color:var(--ink-soft);}
+.doctypetab-del svg{width:11px;height:11px;}
+.adddoctype{display:flex;gap:10px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line);}
+.adddoctype input{
+  flex:1;padding:8px 12px;border:1px solid var(--line);border-radius:5px;font-size:13px;font-family:inherit;
+}
+.adddoctype input:focus{outline:none;border-color:var(--teal);}
+
 .catgroup{margin-bottom:20px;}
 .catgroup h3{
   font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--teal-deep);

@@ -9,10 +9,12 @@ export const STEPS = ['input', 'results'];
 export class DocumentModel {
   constructor() {
     this.markdown = '';
+    this.docType = null;       // which checklist (by document type) to run against
     this.step = 'input';       // 'input' | 'results'
     this.checking = false;
     this.checkError = null;
     this.results = null;       // array of {id, status, finding}
+    this.checkedDocType = null; // docType the current results were checked against
     this.resultFilter = 'all';
   }
 
@@ -26,18 +28,7 @@ export class DocumentModel {
     this.checking = false;
     this.checkError = null;
     this.results = null;
+    this.checkedDocType = null;
     this.resultFilter = 'all';
-  }
-
-  downloadMarkdown() {
-    const blob = new Blob([this.markdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'document.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   }
 }
