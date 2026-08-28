@@ -6,7 +6,13 @@ Assistance tool for aqua feed document checking and validation.
 
 - **PDF → Markdown conversion removed.** The app no longer accepts PDFs, renders page
   thumbnails, or calls the image-to-markdown Claude API path. Markdown is now supplied
-  directly, either by uploading a `.md` file or by pasting/typing it into the editor.
+  directly by pasting/typing it into the editor (file upload has been removed too — the
+  editor is the only input path).
+- **Access key gate.** Before the app is usable, it shows a lock screen asking for an
+  access key. This isn't a login system — no accounts or usernames — just a single
+  shared passphrase, set server-side as the Worker's `APP_KEY` secret, that the Worker
+  checks on every request via an `X-App-Key` header. See
+  `/cloudflare-worker/README.md` for how to set it.
 - **Split into MVC.** The former single `aquacheck.html` file has been broken into
   models, views, and controllers (see structure below), loaded as native ES modules.
 
@@ -21,18 +27,21 @@ js/
   model/
     DocumentModel.js               State for the document under review (markdown, step, results)
     ChecklistModel.js               Checklist rules, categories, defaults, persistence (window.storage)
+    AuthModel.js                    Access-key state + localStorage persistence
   view/
     icons.js                       Shared inline SVG icon set
     StepperView.js                 2-step workflow indicator (Document → Results)
-    DocumentView.js                 Upload/paste + edit markdown step
+    DocumentView.js                 Paste/edit markdown step
     ResultsView.js                  Stamp-style pass/fail/warning/unclear results
     ChecklistView.js                Checklist Settings tab (categorized, toggleable, editable)
+    GateView.js                     Access-key lock screen shown before the app is usable
   controller/
-    AppController.js                Top-level: tab switching, boot sequence, wires sub-controllers
-    DocumentController.js           Handles file upload, paste input, running the compliance check
+    AppController.js                Top-level: gate boot sequence, tab switching, wires sub-controllers
+    DocumentController.js           Handles the markdown editor, running the compliance check
     ChecklistController.js          Handles rule toggle/edit/delete/add + persistence
+    GateController.js               Handles access-key input + verification against the Worker
   api/
-    claudeApi.js                    Anthropic API call for checklist-based compliance checking
+    claudeApi.js                    API calls (checklist compliance check, access-key verification)
   util/
     helpers.js                      Shared helpers (HTML escaping)
 ```

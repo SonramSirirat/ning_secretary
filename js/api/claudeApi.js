@@ -5,16 +5,22 @@
 
 import { API_PROXY_URL } from '../config.js';
 
-async function callClaude(messages, { maxTokens = 1500 } = {}) {
+async function callClaude(messages, { maxTokens = 1500, accessKey } = {}) {
   const response = await fetch(API_PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-Key': accessKey || '',
+    },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: maxTokens,
       messages,
     }),
   });
+  if (response.status === 401) {
+    throw new AuthError('Access key rejected.');
+  }
   if (!response.ok) {
     throw new Error('API request failed: ' + response.status);
   }
@@ -23,7 +29,25 @@ async function callClaude(messages, { maxTokens = 1500 } = {}) {
   return textBlocks.join('\n');
 }
 
-export async function runChecklistCheck(markdown, rules) {
+export class AuthError extends Error {}
+
+// Cheap round-trip that only checks the access key against the Worker's
+// APP_KEY secret — it does not spend any Gemini/model quota.
+export async function verifyKey(accessKey) {
+  const response = await fetch(API_PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-Key': accessKey || '',
+    },
+    body: JSON.stringify({ action: 'verify' }),
+  });
+  if (response.status === 401) return false;
+  if (!response.ok) throw new Error('Verification request failed: ' + response.status);
+  return true;
+}
+
+export async function runChecklistCheck(markdown, rules, accessKey) {
   const ruleList = rules.map(r => `- id: ${r.id}\n  rule: ${r.rule}`).join('\n');
   const prompt = `You are a compliance reviewer for aquaculture feed export documents (health certificates, technical documents, and related paperwork).
 
@@ -45,7 +69,7 @@ DOCUMENT (markdown):
 ${markdown}
 """`;
   const messages = [{ role: 'user', content: prompt }];
-  const raw = await callClaude(messages, { maxTokens: 2500 });
+  const raw = await callClaude(messages, { maxTokens: 2500, accessKey });
   const cleaned = raw.replace(/```json|```/g, '').trim();
   return JSON.parse(cleaned);
 }

@@ -2,12 +2,13 @@
 import { renderStepper } from '../view/StepperView.js';
 import { renderInputStep } from '../view/DocumentView.js';
 import { renderResultsStep } from '../view/ResultsView.js';
-import { runChecklistCheck } from '../api/claudeApi.js';
+import { runChecklistCheck, AuthError } from '../api/claudeApi.js';
 
 export class DocumentController {
-  constructor(docModel, checklistModel, mountEl) {
+  constructor(docModel, checklistModel, authModel, mountEl) {
     this.docModel = docModel;
     this.checklistModel = checklistModel;
+    this.authModel = authModel;
     this.mountEl = mountEl;
   }
 
@@ -33,22 +34,8 @@ export class DocumentController {
     });
 
     if (m.step === 'input') {
-      const dz = document.getElementById('dropzone');
-      const fi = document.getElementById('fileinput');
-      if (dz) {
-        dz.addEventListener('click', () => fi.click());
-        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
-        dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-        dz.addEventListener('drop', e => {
-          e.preventDefault();
-          dz.classList.remove('drag');
-          if (e.dataTransfer.files.length) this._handleFile(e.dataTransfer.files[0]);
-        });
-      }
-      if (fi) fi.addEventListener('change', e => { if (e.target.files.length) this._handleFile(e.target.files[0]); });
-
       const mdedit = document.getElementById('mdedit');
-      if (mdedit) mdedit.addEventListener('input', e => { m.setMarkdownFromPaste(e.target.value); });
+      if (mdedit) mdedit.addEventListener('input', e => { m.setMarkdown(e.target.value); });
 
       const dlBtn = document.getElementById('btn-download-md');
       if (dlBtn) dlBtn.addEventListener('click', () => m.downloadMarkdown());
@@ -70,20 +57,6 @@ export class DocumentController {
     }
   }
 
-  async _handleFile(file) {
-    const m = this.docModel;
-    m.uploadError = null;
-    const isMd = file.name.toLowerCase().endsWith('.md') || file.type === 'text/markdown';
-    if (!isMd) {
-      m.uploadError = 'Please upload a .md file.';
-      this.render();
-      return;
-    }
-    const text = await file.text();
-    m.setMarkdownFromFile(file.name, text);
-    this.render();
-  }
-
   async _runCheck() {
     const m = this.docModel;
     m.checking = true;
@@ -97,13 +70,19 @@ export class DocumentController {
         this.render();
         return;
       }
-      const results = await runChecklistCheck(m.markdown, activeRules);
+      const results = await runChecklistCheck(m.markdown, activeRules, this.authModel.key);
       m.results = results;
       m.step = 'results';
       m.resultFilter = 'all';
     } catch (err) {
       console.error(err);
-      m.checkError = 'The check could not be completed. Please try again.';
+      if (err instanceof AuthError) {
+        m.checkError = 'Your access key is no longer valid. Please sign in again.';
+        this.authModel.forget();
+        this._onAuthLost && this._onAuthLost();
+      } else {
+        m.checkError = 'The check could not be completed. Please try again.';
+      }
     }
     m.checking = false;
     this.render();

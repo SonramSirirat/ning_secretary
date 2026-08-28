@@ -21,7 +21,7 @@ function corsHeaders(env) {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-App-Key',
   };
 }
 
@@ -65,11 +65,29 @@ export default {
       return json({ error: 'Server misconfigured: GEMINI_API_KEY not set' }, 500, env);
     }
 
+    // Shared access key gate: the frontend shows a lock screen before it
+    // lets anyone use the app, and sends whatever key the person entered
+    // in the X-App-Key header on every request (including the lightweight
+    // "verify" ping used just to check the key). If APP_KEY isn't
+    // configured, the gate is effectively disabled — set it to require one.
+    if (env.APP_KEY) {
+      const providedKey = request.headers.get('X-App-Key') || '';
+      if (providedKey !== env.APP_KEY) {
+        return json({ error: 'Invalid or missing access key' }, 401, env);
+      }
+    }
+
     let body;
     try {
       body = await request.json();
     } catch (e) {
       return json({ error: 'Invalid JSON body' }, 400, env);
+    }
+
+    // Used by the frontend's gate screen to check a key without spending
+    // any Gemini quota — the key check above has already happened by now.
+    if (body.action === 'verify') {
+      return json({ ok: true }, 200, env);
     }
 
     if (!Array.isArray(body.messages) || body.messages.length === 0) {

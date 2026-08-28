@@ -7,8 +7,14 @@ compatibility_date = "2026-08-01"
 [vars]
 ALLOWED_ORIGIN = "https://sonramsirirat.github.io"
 
-# The real secret is NOT stored here — set it after creating the Worker:
+# Secrets are NOT stored here — set them after creating the Worker:
 #   wrangler secret put GEMINI_API_KEY
+#   wrangler secret put APP_KEY
 #
-# Get a free key (no credit card required) at:
+# GEMINI_API_KEY: get a free key (no credit card required) at
 #   https://aistudio.google.com/apikey
+#
+# APP_KEY: any passphrase you choose. This is the shared access key the
+# AquaCheck frontend asks for before letting anyone use the app. Give it
+# to whoever should have access. If you never set this secret, the gate
+# is effectively disabled (any key, or no key, is accepted).

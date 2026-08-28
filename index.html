@@ -12,26 +12,30 @@
 <body>
 <div class="wrap">
 
-  <div class="masthead">
-    <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 48 48" fill="none">
-        <circle cx="24" cy="24" r="22" stroke="#0C2D46" stroke-width="2"/>
-        <path d="M8 26c4-6 8-6 12 0s8 6 12 0 8-6 8 0" stroke="#2A8C82" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-        <path d="M8 32c4-6 8-6 12 0s8 6 12 0 8-6 8 0" stroke="#0C2D46" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
-      </svg>
-      <div class="brand-text">
-        <h1>AquaCheck</h1>
-        <p>Feed Document Inspection</p>
+  <div id="view-gate" style="display:none;"></div>
+
+  <div id="app-shell" style="display:none;">
+    <div class="masthead">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="22" stroke="#0C2D46" stroke-width="2"/>
+          <path d="M8 26c4-6 8-6 12 0s8 6 12 0 8-6 8 0" stroke="#2A8C82" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <path d="M8 32c4-6 8-6 12 0s8 6 12 0 8-6 8 0" stroke="#0C2D46" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+        </svg>
+        <div class="brand-text">
+          <h1>AquaCheck</h1>
+          <p>Feed Document Inspection</p>
+        </div>
+      </div>
+      <div class="maintabs">
+        <div class="maintab" id="tab-document">Document</div>
+        <div class="maintab" id="tab-checklist">Checklist Settings</div>
       </div>
     </div>
-    <div class="maintabs">
-      <div class="maintab" id="tab-document">Document</div>
-      <div class="maintab" id="tab-checklist">Checklist Settings</div>
-    </div>
-  </div>
 
-  <div id="view-document"></div>
-  <div id="view-checklist" style="display:none;"></div>
+    <div id="view-document"></div>
+    <div id="view-checklist" style="display:none;"></div>
+  </div>
 
 </div>
 

@@ -50,13 +50,38 @@ current figures if you're unsure.
    wrangler secret put GEMINI_API_KEY
    ```
 
-5. Confirm `ALLOWED_ORIGIN` in `wrangler.toml` matches your actual GitHub
+5. Set an access key — this is the passphrase the AquaCheck frontend asks
+   for before letting anyone use the app (see "Access key gate" below):
+   ```bash
+   wrangler secret put APP_KEY
+   ```
+
+6. Confirm `ALLOWED_ORIGIN` in `wrangler.toml` matches your actual GitHub
    Pages URL, e.g. `https://sonramsirirat.github.io` (no trailing slash).
 
-6. Deploy:
+7. Deploy:
    ```bash
    wrangler deploy
    ```
+
+## Access key gate
+
+The frontend shows a lock screen before the app is usable. Whatever the
+person types there is sent as the `X-App-Key` header on every request to
+this Worker (including a cheap `{"action":"verify"}` ping the gate screen
+uses to check the key without spending any Gemini quota). The Worker
+rejects any request whose header doesn't match the `APP_KEY` secret with a
+`401`.
+
+This is **not** a login system — there are no accounts or usernames, just
+one shared passphrase you hand out to whoever should have access. Rotate
+it any time with `wrangler secret put APP_KEY` followed by `wrangler
+deploy`; existing users will be bounced back to the lock screen next time
+they make a request.
+
+If you don't set `APP_KEY` at all, the gate is effectively disabled (the
+Worker accepts any key, since there's nothing to compare against) — the
+frontend will still show the lock screen, but any input will pass.
 
 The URL stays the same as before if you're redeploying the same Worker
 (`aquacheck-proxy`) — no changes needed in `js/config.js` on the frontend.
