@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,7 +76,7 @@ app.post(['/api', '/api/verify', '/api/check'], async (req: Request, res: Respon
       return;
     }
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-3.7-flash', 'gemini-2.0-flash'];
+    const candidateModels = ['gemini-3.7-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
     let lastError: any = null;
     let outputText = '';
 
@@ -86,12 +86,17 @@ app.post(['/api', '/api/verify', '/api/check'], async (req: Request, res: Respon
 
       while (attempts < maxAttempts) {
         try {
+          const config: any = {
+            responseMimeType: 'application/json',
+          };
+          if (model === 'gemini-3.7-flash') {
+            config.thinkingConfig = { thinkingLevel: ThinkingLevel.LOW };
+          }
+
           const response = await ai.models.generateContent({
             model,
             contents: prompt,
-            config: {
-              responseMimeType: 'application/json',
-            },
+            config,
           });
 
           outputText = response.text || '[]';
@@ -103,11 +108,11 @@ app.post(['/api', '/api/verify', '/api/check'], async (req: Request, res: Respon
           const isOverloaded = status === 503 || status === 429 || String(err?.message || '').includes('high demand') || String(err?.message || '').includes('UNAVAILABLE');
 
           if (isOverloaded && attempts < maxAttempts) {
-            // Wait 1.2s before retrying
-            await new Promise(r => setTimeout(r, 1200));
+            // Wait 1s before retrying
+            await new Promise(r => setTimeout(r, 1000));
             continue;
           }
-          break; // Switch to next model in candidate list
+          break; // Switch to next candidate model
         }
       }
 
