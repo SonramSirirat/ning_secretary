@@ -76,15 +76,54 @@ app.post(['/api', '/api/verify', '/api/check'], async (req: Request, res: Respon
       return;
     }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+    const candidateModels = ['gemini-2.5-flash', 'gemini-3.7-flash', 'gemini-2.0-flash'];
+    let lastError: any = null;
+    let outputText = '';
 
-    const outputText = response.text || '[]';
+    for (const model of candidateModels) {
+      let attempts = 0;
+      const maxAttempts = 2;
+
+      while (attempts < maxAttempts) {
+        try {
+          const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+            },
+          });
+
+          outputText = response.text || '[]';
+          break;
+        } catch (err: any) {
+          lastError = err;
+          attempts++;
+          const status = err?.status || err?.code || 0;
+          const isOverloaded = status === 503 || status === 429 || String(err?.message || '').includes('high demand') || String(err?.message || '').includes('UNAVAILABLE');
+
+          if (isOverloaded && attempts < maxAttempts) {
+            // Wait 1.2s before retrying
+            await new Promise(r => setTimeout(r, 1200));
+            continue;
+          }
+          break; // Switch to next model in candidate list
+        }
+      }
+
+      if (outputText) {
+        break;
+      }
+    }
+
+    if (!outputText) {
+      const errMsg = lastError?.message || (typeof lastError === 'object' ? JSON.stringify(lastError) : String(lastError));
+      res.status(503).json({
+        error: 'The AI model is temporarily experiencing high demand. Please try again in a few moments.',
+        detail: errMsg,
+      });
+      return;
+    }
 
     // Format output envelope compatible with frontend expectations
     res.status(200).json({

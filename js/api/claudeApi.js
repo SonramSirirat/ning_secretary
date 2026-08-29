@@ -26,7 +26,7 @@ async function callClaude(messages, { maxTokens = 1500, accessKey } = {}) {
     try {
       const errData = await response.json();
       if (errData && errData.error) {
-        msg = errData.error + (errData.detail ? ': ' + errData.detail : '');
+        msg = errData.error;
       }
     } catch (e) {}
     throw new Error(msg);
