@@ -93,7 +93,7 @@ export class DocumentController {
         this.authModel.forget();
         this._onAuthLost && this._onAuthLost();
       } else {
-        m.checkError = 'The check could not be completed. Please try again.';
+        m.checkError = err?.message || 'The check could not be completed. Please try again.';
       }
     }
     m.checking = false;

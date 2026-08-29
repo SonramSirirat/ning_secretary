@@ -1,0 +1,6 @@
+{
+  "name": "AquaCheck",
+  "description": "Feed document checking, validation, and compliance inspection tool.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

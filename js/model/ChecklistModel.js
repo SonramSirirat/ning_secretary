@@ -38,8 +38,13 @@ export class ChecklistModel {
 
   async load() {
     try {
-      const res = await window.storage.get(RULES_STORAGE_KEY, false);
-      if (res && res.value) this.rules = JSON.parse(res.value);
+      if (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function') {
+        const res = await window.storage.get(RULES_STORAGE_KEY, false);
+        if (res && res.value) this.rules = JSON.parse(res.value);
+      } else if (typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem(RULES_STORAGE_KEY);
+        if (stored) this.rules = JSON.parse(stored);
+      }
     } catch (e) {
       /* not found — fall through to defaults */
     }
@@ -49,8 +54,13 @@ export class ChecklistModel {
     }
 
     try {
-      const res = await window.storage.get(DOCTYPES_STORAGE_KEY, false);
-      if (res && res.value) this.docTypes = JSON.parse(res.value);
+      if (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function') {
+        const res = await window.storage.get(DOCTYPES_STORAGE_KEY, false);
+        if (res && res.value) this.docTypes = JSON.parse(res.value);
+      } else if (typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem(DOCTYPES_STORAGE_KEY);
+        if (stored) this.docTypes = JSON.parse(stored);
+      }
     } catch (e) {
       /* not found — fall through to defaults */
     }
@@ -76,7 +86,12 @@ export class ChecklistModel {
 
   async saveRules() {
     try {
-      await window.storage.set(RULES_STORAGE_KEY, JSON.stringify(this.rules), false);
+      if (typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(RULES_STORAGE_KEY, JSON.stringify(this.rules), false);
+      }
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(this.rules));
+      }
     } catch (e) {
       console.error('checklist rules save failed', e);
     }
@@ -84,7 +99,12 @@ export class ChecklistModel {
 
   async saveDocTypes() {
     try {
-      await window.storage.set(DOCTYPES_STORAGE_KEY, JSON.stringify(this.docTypes), false);
+      if (typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(DOCTYPES_STORAGE_KEY, JSON.stringify(this.docTypes), false);
+      }
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(DOCTYPES_STORAGE_KEY, JSON.stringify(this.docTypes));
+      }
     } catch (e) {
       console.error('checklist doc types save failed', e);
     }

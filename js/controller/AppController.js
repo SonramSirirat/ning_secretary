@@ -36,21 +36,19 @@ export class AppController {
   async init() {
     this._wireTabs();
 
-    // If we have a remembered key, verify it silently before showing anything.
-    if (this.authModel.key) {
-      this.authModel.verifying = true;
-      try {
-        const ok = await verifyKey(this.authModel.key);
-        if (ok) {
-          this.authModel.verified = true;
-          await this._boot();
-          return;
-        }
-      } catch (e) {
-        /* fall through to gate */
+    // If key matches or server allows open access without APP_KEY
+    this.authModel.verifying = true;
+    try {
+      const ok = await verifyKey(this.authModel.key || '');
+      if (ok) {
+        this.authModel.verified = true;
+        await this._boot();
+        return;
       }
-      this.authModel.forget();
+    } catch (e) {
+      /* fall through to gate */
     }
+    this.authModel.forget();
     this._showGate();
   }
 

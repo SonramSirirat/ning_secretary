@@ -22,7 +22,14 @@ async function callClaude(messages, { maxTokens = 1500, accessKey } = {}) {
     throw new AuthError('Access key rejected.');
   }
   if (!response.ok) {
-    throw new Error('API request failed: ' + response.status);
+    let msg = 'API request failed (' + response.status + ')';
+    try {
+      const errData = await response.json();
+      if (errData && errData.error) {
+        msg = errData.error + (errData.detail ? ': ' + errData.detail : '');
+      }
+    } catch (e) {}
+    throw new Error(msg);
   }
   const data = await response.json();
   const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text);
