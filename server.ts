@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
@@ -112,7 +113,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use(express.static(__dirname));
 
 // Fallback to index.html for root or SPA navigation
-app.get('*', (_req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
