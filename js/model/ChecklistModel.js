@@ -29,68 +29,106 @@ export const CATEGORIES = ['Completeness', 'Regulatory Requirements', 'Data Cons
 
 const RULES_STORAGE_KEY = 'checklist-items';
 const DOCTYPES_STORAGE_KEY = 'checklist-doctypes';
+const ACTIVE_DOCTYPE_STORAGE_KEY = 'checklist-active-doctype';
 
 export class ChecklistModel {
   constructor() {
     this.rules = null;    // populated by load()
     this.docTypes = null; // populated by load()
+    this.activeDocType = null;
   }
 
   async load() {
+    // 1. Load Rules from storage
+    let loadedRules = null;
     try {
-      if (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function') {
-        const res = await window.storage.get(RULES_STORAGE_KEY, false);
-        if (res && res.value) this.rules = JSON.parse(res.value);
-      } else if (typeof localStorage !== 'undefined') {
+      if (typeof localStorage !== 'undefined') {
         const stored = localStorage.getItem(RULES_STORAGE_KEY);
-        if (stored) this.rules = JSON.parse(stored);
+        if (stored) loadedRules = JSON.parse(stored);
       }
     } catch (e) {
-      /* not found — fall through to defaults */
+      console.warn('Could not read rules from localStorage', e);
     }
-    if (!this.rules) {
+
+    if (!loadedRules && typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function') {
+      try {
+        const res = await window.storage.get(RULES_STORAGE_KEY, false);
+        if (res && res.value) loadedRules = JSON.parse(res.value);
+      } catch (e) {
+        console.warn('Could not read rules from window.storage', e);
+      }
+    }
+
+    if (Array.isArray(loadedRules)) {
+      this.rules = loadedRules;
+    } else {
       this.rules = JSON.parse(JSON.stringify(DEFAULT_RULES));
       await this.saveRules();
     }
 
+    // 2. Load DocTypes from storage
+    let loadedDocTypes = null;
     try {
-      if (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function') {
-        const res = await window.storage.get(DOCTYPES_STORAGE_KEY, false);
-        if (res && res.value) this.docTypes = JSON.parse(res.value);
-      } else if (typeof localStorage !== 'undefined') {
+      if (typeof localStorage !== 'undefined') {
         const stored = localStorage.getItem(DOCTYPES_STORAGE_KEY);
-        if (stored) this.docTypes = JSON.parse(stored);
+        if (stored) loadedDocTypes = JSON.parse(stored);
       }
     } catch (e) {
-      /* not found — fall through to defaults */
+      console.warn('Could not read docTypes from localStorage', e);
     }
-    if (!this.docTypes) {
+
+    if (!loadedDocTypes && typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function') {
+      try {
+        const res = await window.storage.get(DOCTYPES_STORAGE_KEY, false);
+        if (res && res.value) loadedDocTypes = JSON.parse(res.value);
+      } catch (e) {
+        console.warn('Could not read docTypes from window.storage', e);
+      }
+    }
+
+    if (Array.isArray(loadedDocTypes) && loadedDocTypes.length > 0) {
+      this.docTypes = loadedDocTypes;
+    } else {
       this.docTypes = [...DEFAULT_DOC_TYPES];
       await this.saveDocTypes();
     }
 
-    // Defensive: if a rule references a docType that somehow isn't in the
-    // persisted list (e.g. imported/edited storage), surface it as a tab
-    // rather than silently hiding those rules.
+    // 3. Ensure any docType referenced in rules is registered in docTypes array
     let changed = false;
     const known = new Set(this.docTypes);
     this.rules.forEach(r => {
-      if (!known.has(r.docType)) {
+      if (r && r.docType && !known.has(r.docType)) {
         this.docTypes.push(r.docType);
         known.add(r.docType);
         changed = true;
       }
     });
-    if (changed) await this.saveDocTypes();
+    if (changed) {
+      await this.saveDocTypes();
+    }
+
+    // 4. Load persisted active docType
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const active = localStorage.getItem(ACTIVE_DOCTYPE_STORAGE_KEY);
+        if (active && this.docTypes.includes(active)) {
+          this.activeDocType = active;
+        }
+      }
+    } catch (e) {}
+
+    if (!this.activeDocType && this.docTypes.length > 0) {
+      this.activeDocType = this.docTypes[0];
+    }
   }
 
   async saveRules() {
     try {
-      if (typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function') {
-        await window.storage.set(RULES_STORAGE_KEY, JSON.stringify(this.rules), false);
-      }
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(this.rules));
+      }
+      if (typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(RULES_STORAGE_KEY, JSON.stringify(this.rules), false);
       }
     } catch (e) {
       console.error('checklist rules save failed', e);
@@ -99,15 +137,33 @@ export class ChecklistModel {
 
   async saveDocTypes() {
     try {
-      if (typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function') {
-        await window.storage.set(DOCTYPES_STORAGE_KEY, JSON.stringify(this.docTypes), false);
-      }
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(DOCTYPES_STORAGE_KEY, JSON.stringify(this.docTypes));
+      }
+      if (typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(DOCTYPES_STORAGE_KEY, JSON.stringify(this.docTypes), false);
       }
     } catch (e) {
       console.error('checklist doc types save failed', e);
     }
+  }
+
+  setActiveDocType(docType) {
+    if (this.docTypes && this.docTypes.includes(docType)) {
+      this.activeDocType = docType;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(ACTIVE_DOCTYPE_STORAGE_KEY, docType);
+        }
+      } catch (e) {}
+    }
+  }
+
+  getActiveDocType() {
+    if (this.activeDocType && this.docTypes && this.docTypes.includes(this.activeDocType)) {
+      return this.activeDocType;
+    }
+    return this.docTypes ? this.docTypes[0] : DEFAULT_DOC_TYPE;
   }
 
   getAll() {
@@ -122,6 +178,43 @@ export class ChecklistModel {
     return this.rules.filter(r => r.enabled && (docType == null || r.docType === docType));
   }
 
+  getCounts(docType) {
+    const list = docType ? this.rules.filter(r => r.docType === docType) : this.rules;
+    const enabled = list.filter(r => r.enabled).length;
+    return { enabled, total: list.length };
+  }
+
+  areAllEnabled(docType) {
+    const list = docType ? this.rules.filter(r => r.docType === docType) : this.rules;
+    return list.length > 0 && list.every(r => r.enabled);
+  }
+
+  hasAnyEnabled(docType) {
+    const list = docType ? this.rules.filter(r => r.docType === docType) : this.rules;
+    return list.some(r => r.enabled);
+  }
+
+  areCategoryAllEnabled(docType, category) {
+    const list = this.rules.filter(r => r.docType === docType && r.category === category);
+    return list.length > 0 && list.every(r => r.enabled);
+  }
+
+  async toggleAll(docType, forceState) {
+    const list = docType ? this.rules.filter(r => r.docType === docType) : this.rules;
+    if (list.length === 0) return;
+    const targetState = typeof forceState === 'boolean' ? forceState : !this.areAllEnabled(docType);
+    list.forEach(r => { r.enabled = targetState; });
+    await this.saveRules();
+  }
+
+  async toggleCategory(docType, category, forceState) {
+    const list = this.rules.filter(r => r.docType === docType && r.category === category);
+    if (list.length === 0) return;
+    const targetState = typeof forceState === 'boolean' ? forceState : !this.areCategoryAllEnabled(docType, category);
+    list.forEach(r => { r.enabled = targetState; });
+    await this.saveRules();
+  }
+
   getGroupedByCategory(docType) {
     const grouped = {};
     CATEGORIES.forEach(c => { grouped[c] = []; });
@@ -134,9 +227,12 @@ export class ChecklistModel {
 
   async addDocType(name) {
     const trimmed = (name || '').trim();
-    if (!trimmed || this.docTypes.includes(trimmed)) return false;
-    this.docTypes.push(trimmed);
-    await this.saveDocTypes();
+    if (!trimmed) return false;
+    if (!this.docTypes.includes(trimmed)) {
+      this.docTypes.push(trimmed);
+      await this.saveDocTypes();
+    }
+    this.setActiveDocType(trimmed);
     return true;
   }
 
@@ -144,6 +240,9 @@ export class ChecklistModel {
     if (this.docTypes.length <= 1) return false; // always keep at least one
     this.docTypes = this.docTypes.filter(d => d !== docType);
     this.rules = this.rules.filter(r => r.docType !== docType);
+    if (this.activeDocType === docType) {
+      this.setActiveDocType(this.docTypes[0]);
+    }
     await this.saveDocTypes();
     await this.saveRules();
     return true;
@@ -176,7 +275,34 @@ export class ChecklistModel {
   }
 
   async add(docType, category, text) {
-    this.rules.push({ id: 'r_' + Date.now(), docType, category, enabled: true, rule: text });
+    const trimmedText = (text || '').trim();
+    if (!trimmedText) return null;
+    const newRule = {
+      id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      docType,
+      category: category || 'Completeness',
+      enabled: true,
+      rule: trimmedText,
+    };
+    this.rules.push(newRule);
+    await this.saveRules();
+    return newRule;
+  }
+
+  async addStarterChecklist(docType) {
+    if (!docType) return;
+    const starters = [
+      { docType, category: 'Completeness', enabled: true, rule: `All standard identification details (parties, dates, reference numbers) for ${docType} are fully stated.` },
+      { docType, category: 'Regulatory Requirements', enabled: true, rule: `All required regulatory clauses and declarations for ${docType} comply with destination authority requirements.` },
+      { docType, category: 'Data Consistency', enabled: true, rule: `Quantities, weights, and lot/batch descriptions on this ${docType} match cross-referenced export paperwork.` },
+      { docType, category: 'Formalities', enabled: true, rule: `Authorized signatory, official stamp, and valid issuance date are present.` },
+    ];
+    for (const item of starters) {
+      this.rules.push({
+        id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        ...item,
+      });
+    }
     await this.saveRules();
   }
 }

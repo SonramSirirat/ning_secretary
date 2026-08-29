@@ -11,11 +11,14 @@ export function renderChecklistView(checklistModel, activeDocType) {
   const current = docTypes.includes(activeDocType) ? activeDocType : docTypes[0];
   const grouped = checklistModel.getGroupedByCategory(current);
   const hasAnyRules = Object.values(grouped).some(list => list.length);
+  const counts = checklistModel.getCounts(current);
+  const allEnabled = checklistModel.areAllEnabled(current);
+  const hasSome = checklistModel.hasAnyEnabled(current);
 
   return `
   <div class="card">
     <h2>Checklist configuration</h2>
-    <p class="sub">Manage the rules used to inspect aqua feed documents, grouped by document type. Toggle a rule off to exclude it from checks, edit the wording inline, or add your own.</p>
+    <p class="sub">Manage the rules used to inspect aqua feed documents, grouped by document type. Use the toggle switch to select or deselect the checklist, toggle individual rules, edit wording inline, or add your own.</p>
 
     <div class="doctypetabs">
       ${docTypes.map(dt => `
@@ -30,12 +33,41 @@ export function renderChecklistView(checklistModel, activeDocType) {
       <button class="btn btn-ghost btn-sm" id="btn-add-doctype">${ICONS.plus} Add type</button>
     </div>
 
-    ${hasAnyRules ? Object.keys(grouped).filter(c => grouped[c].length).map(cat => `
+    ${hasAnyRules ? `
+      <div class="checklist-header-bar">
+        <div class="checklist-header-info">
+          <div class="checklist-title-label">Checklist for <strong>${escapeHtml(current)}</strong></div>
+          <div class="checklist-count-badge">${counts.enabled} of ${counts.total} rules selected</div>
+        </div>
+        <div class="checklist-switch-control" id="btn-toggle-all-rules" data-doctype-toggle="${escapeHtml(current)}" title="Switch toggle to select or deselect all rules in this checklist">
+          <span class="checklist-switch-label">${allEnabled ? 'Deselect entire checklist' : 'Select entire checklist'}</span>
+          <div class="ruletoggle ${allEnabled ? 'on' : (hasSome ? 'partial' : '')}">
+            <div class="knob"></div>
+          </div>
+        </div>
+      </div>
+    ` : ''}
+
+    ${hasAnyRules ? Object.keys(grouped).filter(c => grouped[c].length).map(cat => {
+      const catList = grouped[cat];
+      const catEnabledCount = catList.filter(r => r.enabled).length;
+      const catAllEnabled = catList.length > 0 && catEnabledCount === catList.length;
+      const catHasSome = catEnabledCount > 0;
+
+      return `
       <div class="catgroup">
-        <h3>${escapeHtml(cat)}</h3>
-        ${grouped[cat].map(r => `
+        <div class="catgroup-header">
+          <h3>${escapeHtml(cat)} <span class="cat-count">(${catEnabledCount}/${catList.length})</span></h3>
+          <div class="cat-toggle-wrap" data-cat-toggle="${escapeHtml(cat)}" data-cat-doctype="${escapeHtml(current)}" title="Toggle to select or deselect all ${escapeHtml(cat)} rules">
+            <span class="cat-toggle-label">${catAllEnabled ? 'Deselect category' : 'Select category'}</span>
+            <div class="ruletoggle ruletoggle-sm ${catAllEnabled ? 'on' : (catHasSome ? 'partial' : '')}">
+              <div class="knob"></div>
+            </div>
+          </div>
+        </div>
+        ${catList.map(r => `
           <div class="ruleitem" data-id="${r.id}">
-            <div class="ruletoggle ${r.enabled ? 'on' : ''}" data-toggle="${r.id}"><div class="knob"></div></div>
+            <div class="ruletoggle ${r.enabled ? 'on' : ''}" data-toggle="${r.id}" title="Toggle rule"><div class="knob"></div></div>
             <div class="ruletext">
               <textarea rows="2" data-edit="${r.id}">${escapeHtml(r.rule)}</textarea>
               <select class="rulecat-select" data-cat="${r.id}">
@@ -46,12 +78,21 @@ export function renderChecklistView(checklistModel, activeDocType) {
           </div>
         `).join('')}
       </div>
-    `).join('') : `<div class="empty">No rules yet for ${escapeHtml(current)}. Add one below.</div>`}
+      `;
+    }).join('') : `
+      <div class="empty-checklist-box">
+        <p>No checklist rules defined yet for <strong>${escapeHtml(current)}</strong>.</p>
+        <p class="sub">Add custom rules below, or populate a starter compliance checklist.</p>
+        <div class="empty-checklist-actions">
+          <button class="btn btn-primary btn-sm" id="btn-add-starter-rules">${ICONS.clipboard} Populate starter checklist</button>
+        </div>
+      </div>
+    `}
 
     <div class="addrule">
       <select class="newcat" id="newrule-cat">${CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('')}</select>
-      <input type="text" id="newrule-text" placeholder="Add a new checklist rule for ${escapeHtml(current)}…" />
-      <button class="btn btn-teal btn-sm" id="btn-add-rule">${ICONS.plus} Add</button>
+      <input type="text" id="newrule-text" placeholder="Add a new checklist rule for ${escapeHtml(current)}… (Press Enter)" />
+      <button class="btn btn-teal btn-sm" id="btn-add-rule">${ICONS.plus} Add rule</button>
     </div>
   </div>`;
 }

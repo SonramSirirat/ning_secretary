@@ -15,8 +15,11 @@ export class DocumentController {
   render() {
     const m = this.docModel;
     // Default the doc-type selection once the checklist has loaded.
-    if (!m.docType && this.checklistModel.getDocTypes && this.checklistModel.getAll()) {
-      m.docType = this.checklistModel.getDocTypes()[0] || null;
+    if (this.checklistModel.getDocTypes && this.checklistModel.getAll()) {
+      const docTypes = this.checklistModel.getDocTypes();
+      if (!m.docType || !docTypes.includes(m.docType)) {
+        m.docType = this.checklistModel.getActiveDocType();
+      }
     }
     this.mountEl.innerHTML = `
       ${renderStepper(m)}
@@ -50,7 +53,22 @@ export class DocumentController {
         });
       }
 
-      if (docTypeSelect) docTypeSelect.addEventListener('change', e => { m.docType = e.target.value; });
+      if (docTypeSelect) {
+        docTypeSelect.addEventListener('change', e => {
+          m.docType = e.target.value;
+          this.checklistModel.setActiveDocType(e.target.value);
+          this.render();
+        });
+      }
+
+      const toggleDocRulesBtn = document.getElementById('btn-toggle-doc-rules');
+      if (toggleDocRulesBtn) {
+        toggleDocRulesBtn.addEventListener('click', async () => {
+          const dt = toggleDocRulesBtn.dataset.doctype || m.docType;
+          await this.checklistModel.toggleAll(dt);
+          this.render();
+        });
+      }
 
       if (checkBtn) checkBtn.addEventListener('click', () => this._runCheck());
     }
