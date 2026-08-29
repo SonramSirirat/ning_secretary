@@ -35,9 +35,15 @@ export function renderInputStep(docModel, checklistModel) {
     <textarea class="mdbox" id="mdedit" placeholder="Paste markdown here…">${escapeHtml(docModel.markdown)}</textarea>
 
     <div class="actionrow">
-      <button class="btn btn-primary" id="btn-run-check" ${docModel.markdown.trim() && counts.enabled > 0 ? '' : 'disabled'}>
-        ${docModel.checking ? '<span class="spinner"></span> Checking…' : ICONS.clipboard + ' Check document'}
+      <button class="btn btn-primary" id="btn-run-check" ${docModel.markdown.trim() && counts.enabled > 0 && !docModel.checking ? '' : 'disabled'}>
+        ${docModel.checking ? `<span class="spinner"></span> Checking… <span class="checking-elapsed-tag" id="checking-elapsed-time">(${docModel.checkingElapsedSec}s)</span>` : ICONS.clipboard + ' Check document'}
       </button>
+
+      ${docModel.checking && docModel.showAbort ? `
+        <button class="btn btn-danger" id="btn-abort-check" type="button" title="Cancel this inspection check">
+          ${ICONS.stop} Abort check
+        </button>
+      ` : ''}
     </div>
     ${counts.enabled === 0 ? `<div class="warnbox">All rules for "${escapeHtml(current)}" are currently deselected. Use the toggle switch above or visit Checklist Settings to enable rules.</div>` : ''}
     ${docModel.checkError ? `<div class="errbox">${escapeHtml(docModel.checkError)}</div>` : ''}

@@ -5,7 +5,7 @@
 
 import { getApiProxyUrl } from '../config.js';
 
-async function callClaude(messages, { maxTokens = 1500, accessKey } = {}) {
+async function callClaude(messages, { maxTokens = 1500, accessKey, signal } = {}) {
   const proxyUrl = getApiProxyUrl();
   let response;
   try {
@@ -20,8 +20,14 @@ async function callClaude(messages, { maxTokens = 1500, accessKey } = {}) {
         max_tokens: maxTokens,
         messages,
       }),
+      signal,
     });
   } catch (netErr) {
+    if (netErr?.name === 'AbortError' || signal?.aborted) {
+      const abortErr = new Error('Inspection check was aborted.');
+      abortErr.name = 'AbortError';
+      throw abortErr;
+    }
     throw new Error(`Cannot reach API proxy at "${proxyUrl}". If you are on GitHub Pages, configure your Cloudflare Worker URL in Proxy Settings.`);
   }
 
@@ -76,7 +82,7 @@ export async function verifyKey(accessKey) {
   return true;
 }
 
-export async function runChecklistCheck(markdown, rules, accessKey) {
+export async function runChecklistCheck(markdown, rules, accessKey, signal) {
   const ruleList = rules.map(r => `- id: ${r.id}\n  category: ${r.category}\n  rule: ${r.rule}`).join('\n');
   const prompt = `You are a compliance reviewer for aquaculture feed export documents (health certificates, technical documents, and related paperwork).
 
@@ -99,7 +105,7 @@ DOCUMENT (markdown):
 ${markdown}
 """`;
   const messages = [{ role: 'user', content: prompt }];
-  const raw = await callClaude(messages, { maxTokens: 4000, accessKey });
+  const raw = await callClaude(messages, { maxTokens: 4000, accessKey, signal });
   
   let list = [];
   try {

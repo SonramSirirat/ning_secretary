@@ -96,9 +96,13 @@ body{
 .btn-ghost:hover:not(:disabled){background:rgba(12,45,70,0.06);}
 .btn-teal{background:var(--teal);border-color:var(--teal);color:#fff;}
 .btn-teal:hover:not(:disabled){background:var(--teal-deep);}
+.btn-danger{background:var(--coral);border-color:var(--coral);color:#fff;}
+.btn-danger:hover:not(:disabled){background:#AD3B21;border-color:#AD3B21;}
 .btn-sm{padding:6px 11px;font-size:12px;}
 .btn svg{width:14px;height:14px;flex:none;}
 .actionrow{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center;}
+.checking-elapsed-tag{font-family:'IBM Plex Mono',monospace;font-size:12px;opacity:0.9;margin-left:2px;}
+.recheck-actions{display:inline-flex;align-items:center;gap:8px;}
 
 textarea.mdbox{
   width:100%;min-height:360px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.6;

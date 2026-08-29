@@ -43,8 +43,18 @@ export function renderResultsStep(docModel, checklistModel) {
       <div class="filters">
         ${['all', 'fail', 'warning', 'unclear', 'pass'].map(f => `<button class="filterbtn ${docModel.resultFilter === f ? 'active' : ''}" data-filter="${f}">${f === 'all' ? 'All' : f[0].toUpperCase() + f.slice(1)}</button>`).join('')}
       </div>
-      <button class="btn btn-ghost btn-sm" id="btn-recheck">${ICONS.stamp} Re-check</button>
+      <div class="recheck-actions">
+        <button class="btn btn-ghost btn-sm" id="btn-recheck" ${docModel.checking ? 'disabled' : ''}>
+          ${docModel.checking ? `<span class="spinner"></span> Checking… <span class="checking-elapsed-tag" id="checking-elapsed-time">(${docModel.checkingElapsedSec}s)</span>` : ICONS.stamp + ' Re-check'}
+        </button>
+        ${docModel.checking && docModel.showAbort ? `
+          <button class="btn btn-danger btn-sm" id="btn-abort-check" type="button" title="Cancel this inspection check">
+            ${ICONS.stop} Abort check
+          </button>
+        ` : ''}
+      </div>
     </div>
+    ${docModel.checkError ? `<div class="errbox">${escapeHtml(docModel.checkError)}</div>` : ''}
     ${filtered.map(r => {
       const rule = byId[r.id];
       if (!rule) return '';

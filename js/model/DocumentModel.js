@@ -12,6 +12,8 @@ export class DocumentModel {
     this.docType = null;       // which checklist (by document type) to run against
     this.step = 'input';       // 'input' | 'results'
     this.checking = false;
+    this.checkingElapsedSec = 0;
+    this.showAbort = false;
     this.checkError = null;
     this.results = null;       // array of {id, status, finding}
     this.checkedDocType = null; // docType the current results were checked against
@@ -26,6 +28,8 @@ export class DocumentModel {
     this.markdown = '';
     this.step = 'input';
     this.checking = false;
+    this.checkingElapsedSec = 0;
+    this.showAbort = false;
     this.checkError = null;
     this.results = null;
     this.checkedDocType = null;
