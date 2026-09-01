@@ -16,7 +16,7 @@ async function callClaude(messages, { maxTokens = 1500, accessKey, signal } = {}
         'X-App-Key': accessKey || '',
       },
       body: JSON.stringify({
-        model: 'gemini-3.7-flash',
+        model: 'gemini-3.1-flash-lite',
         max_tokens: maxTokens,
         messages,
       }),

@@ -13,7 +13,7 @@
  */
 
 const GEMINI_VERSION = 'v1beta';
-const DEFAULT_MODEL = 'gemini-3.6-flash'; // solid free-tier balance of quality/quota
+const DEFAULT_MODEL = 'gemini-3.1-flash-lite'; // fast, reliable, high availability to avoid high-demand queues
 const MAX_TOKENS_CEILING = 4000; // hard cap regardless of what the client requests
 
 function corsHeaders(env) {

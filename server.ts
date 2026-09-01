@@ -76,7 +76,11 @@ app.post(['/api', '/api/verify', '/api/check'], async (req: Request, res: Respon
       return;
     }
 
-    const candidateModels = ['gemini-3.7-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
+    const envModel = process.env.GEMINI_MODEL?.trim();
+    // Prioritize high-availability, low-latency models to avoid high-demand queues
+    const candidateModels = envModel
+      ? [envModel, 'gemini-3.1-flash-lite', 'gemini-flash-latest']
+      : ['gemini-3.1-flash-lite', 'gemini-flash-latest', 'gemini-3.7-flash'];
     let lastError: any = null;
     let outputText = '';
 
@@ -161,6 +165,19 @@ app.use((_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`AquaCheck server running on http://0.0.0.0:${PORT}`);
 });
+
+process.on('SIGTERM', () => {
+  server.close(() => {
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  server.close(() => {
+    process.exit(0);
+  });
+});
+
